@@ -173,8 +173,8 @@ func TestSerialization(t *testing.T) {
 				},
 			},
 		},
-		DNS: map[util.Address][]*intern.Value{
-			util.AddressFromString("172.217.12.145"): {intern.GetByString("golang.org")},
+		DNS: map[netaddr.IP][]*intern.Value{
+			netaddr.MustParseIP("172.217.12.145"): {intern.GetByString("golang.org")},
 		},
 		DNSStats: dns.StatsByKeyByNameByType{
 			dns.Key{

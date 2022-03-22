@@ -6,7 +6,6 @@
 package dns
 
 import (
-	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/google/gopacket/layers"
 	"go4.org/intern"
 	"inet.af/netaddr"
@@ -45,7 +44,7 @@ type StatsByKeyByNameByType map[Key]map[*intern.Value]map[QueryType]Stats
 
 // ReverseDNS translates IPs to names
 type ReverseDNS interface {
-	Resolve([]util.Address) map[util.Address][]*intern.Value
+	Resolve([]netaddr.IP) map[netaddr.IP][]*intern.Value
 	GetDNSStats() StatsByKeyByNameByType
 	GetStats() map[string]int64
 	Close()

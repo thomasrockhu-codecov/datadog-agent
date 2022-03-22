@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/network/config"
-	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
 	"github.com/google/gopacket/layers"
 	"github.com/miekg/dns"
@@ -37,16 +36,16 @@ func skipIfDNSNotSupported(t *testing.T) {
 }
 
 func checkSnooping(t *testing.T, destIP string, destName string, reverseDNS *dnsMonitor) {
-	destAddr := util.AddressFromString(destIP)
+	destAddr := netaddr.MustParseIP(destIP)
 	srcIP := "127.0.0.1"
-	srcAddr := util.AddressFromString(srcIP)
+	srcAddr := netaddr.MustParseIP(srcIP)
 
 	require.Eventually(t, func() bool {
 		return reverseDNS.cache.Len() >= 1
 	}, 1*time.Second, 10*time.Millisecond)
 
 	// Verify that the IP from the connections above maps to the right name
-	payload := []util.Address{srcAddr, destAddr}
+	payload := []netaddr.IP{srcAddr, destAddr}
 	names := reverseDNS.Resolve(payload)
 	require.Len(t, names, 1)
 	assert.Contains(t, internStrings(names[destAddr]), destName)

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/network/config"
-	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -240,7 +239,8 @@ func (*dnsParser) extractIPsInto(alias []byte, records []layers.DNSResourceRecor
 			continue
 		}
 		if bytes.Equal(alias, record.Name) {
-			t.add(util.AddressFromNetIP(record.IP), time.Duration(record.TTL)*time.Second)
+			ip, _ := netaddr.FromStdIP(record.IP)
+			t.add(ip, time.Duration(record.TTL)*time.Second)
 		}
 	}
 }

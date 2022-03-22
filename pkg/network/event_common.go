@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"inet.af/netaddr"
+
 	"github.com/DataDog/datadog-agent/pkg/network/dns"
 	"github.com/DataDog/datadog-agent/pkg/network/http"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
@@ -118,7 +120,7 @@ type BufferedData struct {
 // Connections wraps a collection of ConnectionStats
 type Connections struct {
 	BufferedData
-	DNS                         map[util.Address][]*intern.Value
+	DNS                         map[netaddr.IP][]*intern.Value
 	ConnTelemetry               map[ConnTelemetryType]int64
 	CompilationTelemetryByAsset map[string]RuntimeCompilationTelemetry
 	HTTP                        map[http.Key]http.RequestStats
@@ -329,15 +331,15 @@ func BeautifyKey(key string) string {
 }
 
 // ConnectionSummary returns a string summarizing a connection
-func ConnectionSummary(c *ConnectionStats, names map[util.Address][]*intern.Value) string {
+func ConnectionSummary(c *ConnectionStats, names map[netaddr.IP][]*intern.Value) string {
 	str := fmt.Sprintf(
 		"[%s%s] [PID: %d] [%v:%d ⇄ %v:%d] ",
 		c.Type,
 		c.Family,
 		c.Pid,
-		printAddress(c.Source, names[c.Source]),
+		printAddress(c.Source, names[c.Source.NetaddrIP()]),
 		c.SPort,
-		printAddress(c.Dest, names[c.Dest]),
+		printAddress(c.Dest, names[c.Dest.NetaddrIP()]),
 		c.DPort,
 	)
 	if c.IPTranslation != nil {
