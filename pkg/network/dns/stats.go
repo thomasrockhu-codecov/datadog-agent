@@ -128,19 +128,19 @@ func (d *dnsStatKeeper) ProcessPacketInfo(info dnsPacketInfo, ts time.Time) {
 
 	latency := microSecs(ts) - start.ts
 
-	_, ok = d.stats[info.key]
+	allStats, ok := d.stats[info.key]
 	if !ok {
-		d.stats[info.key] = make(map[*intern.Value]map[QueryType]Stats)
+		allStats = make(map[*intern.Value]map[QueryType]Stats)
 	}
-	_, ok = d.stats[info.key][start.question]
+	stats, ok := allStats[start.question]
 	if !ok {
 		if d.numStats >= d.maxStats {
 			d.droppedStats++
 			return
 		}
-		d.stats[info.key][start.question] = make(map[QueryType]Stats)
+		stats = make(map[QueryType]Stats)
 	}
-	byqtype, ok := d.stats[info.key][start.question][start.qtype]
+	byqtype, ok := stats[start.qtype]
 	if !ok {
 		if d.numStats >= d.maxStats {
 			d.droppedStats++
@@ -161,7 +161,9 @@ func (d *dnsStatKeeper) ProcessPacketInfo(info dnsPacketInfo, ts time.Time) {
 			byqtype.FailureLatencySum += latency
 		}
 	}
-	d.stats[info.key][start.question][start.qtype] = byqtype
+	stats[start.qtype] = byqtype
+	allStats[start.question] = stats
+	d.stats[info.key] = allStats
 }
 
 func (d *dnsStatKeeper) GetNumStats() (int32, int32) {
