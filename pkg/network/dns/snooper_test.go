@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go4.org/intern"
+	"inet.af/netaddr"
 )
 
 func skipIfDNSNotSupported(t *testing.T) {
@@ -190,9 +191,9 @@ func getKey(
 	protocol uint8,
 ) Key {
 	return Key{
-		ClientIP:   util.AddressFromString(qIP),
+		ClientIP:   netaddr.MustParseIP(qIP),
 		ClientPort: uint16(qPort),
-		ServerIP:   util.AddressFromString(sIP),
+		ServerIP:   netaddr.MustParseIP(sIP),
 		Protocol:   protocol,
 	}
 }
