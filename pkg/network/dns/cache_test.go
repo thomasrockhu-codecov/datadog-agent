@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"go4.org/intern"
+
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -238,7 +240,7 @@ func TestGetOversizedDNS(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		cache.Add(&translation{
-			dns: fmt.Sprintf("%d.host.com", i),
+			dns: intern.GetByString(fmt.Sprintf("%d.host.com", i)),
 			ips: map[util.Address]time.Time{addr: exp},
 		})
 	}
@@ -251,7 +253,7 @@ func TestGetOversizedDNS(t *testing.T) {
 
 	for i := 5; i < 100; i++ {
 		cache.Add(&translation{
-			dns: fmt.Sprintf("%d.host.com", i),
+			dns: intern.GetByString(fmt.Sprintf("%d.host.com", i)),
 			ips: map[util.Address]time.Time{addr: exp},
 		})
 	}
@@ -325,7 +327,7 @@ func payloadGen(size int, resolveRatio float64, added []util.Address) []util.Add
 
 func newTranslation(domain string) *translation {
 	return &translation{
-		dns: strings.ToLower(domain),
+		dns: intern.GetByString(strings.ToLower(domain)),
 		ips: make(map[util.Address]time.Time),
 	}
 }
