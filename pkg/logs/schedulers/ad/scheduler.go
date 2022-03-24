@@ -14,6 +14,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/providers/names"
 	logsConfig "github.com/DataDog/datadog-agent/pkg/logs/config"
+	"github.com/DataDog/datadog-agent/pkg/logs/internal/util"
 	"github.com/DataDog/datadog-agent/pkg/logs/schedulers"
 	"github.com/DataDog/datadog-agent/pkg/logs/service"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
@@ -78,7 +79,7 @@ func (s *Scheduler) Schedule(configs []integration.Config) {
 				s.mgr.AddSource(source)
 				s.sourcesByServiceID[source.Config.Identifier] = source
 			}
-		case s.newService(config):
+		case !util.CcaUseBareConfigs() && s.newService(config):
 			entityType, _, err := s.parseEntity(config.TaggerEntity)
 			if err != nil {
 				log.Warnf("Invalid service: %v", err)
@@ -121,7 +122,7 @@ func (s *Scheduler) Unschedule(configs []integration.Config) {
 				delete(s.sourcesByServiceID, identifier)
 				s.mgr.RemoveSource(source)
 			}
-		case s.newService(config):
+		case !util.CcaUseBareConfigs() && s.newService(config):
 			// new service to remove
 			entityType, _, err := s.parseEntity(config.TaggerEntity)
 			if err != nil {
