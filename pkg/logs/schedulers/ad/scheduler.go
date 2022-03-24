@@ -6,6 +6,7 @@
 package ad
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/providers/names"
 	logsConfig "github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/internal/util"
+	"github.com/DataDog/datadog-agent/pkg/logs/internal/util/containersorpods"
 	"github.com/DataDog/datadog-agent/pkg/logs/schedulers"
 	"github.com/DataDog/datadog-agent/pkg/logs/service"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
@@ -29,6 +31,12 @@ type Scheduler struct {
 	mgr                schedulers.SourceManager
 	listener           *adListener
 	sourcesByServiceID map[string]*logsConfig.LogSource
+
+	// logWhat is used to determine some of the LogSource details
+	logWhat containersorpods.LogWhat
+
+	// cancelStart cancels the startup of this component
+	cancelStart context.CancelFunc
 }
 
 var _ schedulers.Scheduler = &Scheduler{}
@@ -37,6 +45,7 @@ var _ schedulers.Scheduler = &Scheduler{}
 func New() schedulers.Scheduler {
 	sch := &Scheduler{
 		sourcesByServiceID: make(map[string]*logsConfig.LogSource),
+		logWhat:            containersorpods.LogUnknown,
 	}
 	sch.listener = newADListener(sch.Schedule, sch.Unschedule)
 	return sch
@@ -45,11 +54,32 @@ func New() schedulers.Scheduler {
 // Start implements schedulers.Scheduler#Start.
 func (s *Scheduler) Start(sourceMgr schedulers.SourceManager) {
 	s.mgr = sourceMgr
-	s.listener.start()
+
+	if util.CcaUseBareConfigs() {
+		// if using bare configs, we need to know LogWhat in order to decide some
+		// particulars of the logs sources, so we must wait for ContainersOrPods
+		ctx, cancel := context.WithCancel(context.Background())
+		s.cancelStart = cancel
+		go func() {
+			s.logWhat = containersorpods.Wait(ctx)
+			if s.logWhat == containersorpods.LogUnknown {
+				// context was cancelled; do nothing
+				return
+			}
+			s.listener.start()
+		}()
+	} else {
+		s.listener.start()
+	}
 }
 
 // Stop implements schedulers.Scheduler#Stop.
 func (s *Scheduler) Stop() {
+	if util.CcaUseBareConfigs() {
+		if s.cancelStart != nil {
+			s.cancelStart()
+		}
+	}
 	s.listener.stop()
 	s.mgr = nil
 }
