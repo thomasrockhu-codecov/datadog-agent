@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery"
+	coreConfig "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/client/http"
 	"github.com/DataDog/datadog-agent/pkg/logs/internal/metrics"
 	"github.com/DataDog/datadog-agent/pkg/logs/internal/util"
@@ -130,7 +131,7 @@ func start(getAC func() *autodiscovery.AutoConfig, serverless bool) (*Agent, err
 	atomic.StoreInt32(&isRunning, 1)
 	log.Info("logs-agent started")
 
-	agent.AddScheduler(adScheduler.New())
+	agent.AddScheduler(adScheduler.New(coreConfig.Datadog.GetBool("logs_config.container_collect_all")))
 	if !util.CcaUseBareConfigs() {
 		agent.AddScheduler(ccaScheduler.New(getAC))
 	}
