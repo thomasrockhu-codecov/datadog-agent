@@ -294,12 +294,10 @@ func (m *Module) Reload() error {
 	monitor := m.probe.GetMonitor()
 	ruleSetLoadedReport := monitor.PrepareRuleSetLoadedReport(ruleSet, loadErr)
 
-	if m.selfTester != nil {
-		if err := m.selfTester.CreateTargetFileIfNeeded(); err != nil {
-			log.Errorf("failed to create self-test target file: %+v", err)
-		}
-		m.selfTester.AddSelfTestRulesToRuleSets(ruleSet, approverRuleSet)
+	if err := m.selfTester.CreateTargetFileIfNeeded(); err != nil {
+		log.Errorf("failed to create self-test target file: %+v", err)
 	}
+	m.selfTester.AddSelfTestRulesToRuleSets(ruleSet, approverRuleSet)
 
 	approvers, err := approverRuleSet.GetApprovers(sprobe.GetCapababilities())
 	if err != nil {
@@ -333,6 +331,10 @@ func (m *Module) Reload() error {
 
 	// report that a new policy was loaded
 	monitor.ReportRuleSetLoaded(ruleSetLoadedReport)
+
+	if m.config.SelfTestEnabled {
+		m.selfTester.RunSelfTest()
+	}
 
 	return nil
 }
@@ -532,10 +534,7 @@ func NewModule(cfg *sconfig.Config, opts ...Opts) (module.Module, error) {
 	// custom limiters
 	limits := make(map[rules.RuleID]Limit)
 
-	var selfTester *SelfTester
-	if cfg.SelfTestEnabled {
-		selfTester = NewSelfTester()
-	}
+	var selfTester = NewSelfTester()
 
 	m := &Module{
 		config:       cfg,
