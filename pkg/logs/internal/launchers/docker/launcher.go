@@ -107,7 +107,7 @@ func (l *Launcher) Stop() {
 
 	// only stop this launcher once it's determined that we should be logging
 	// containers, and not pods, but do not block trying to find out.
-	if containersorpods.Get() == containersorpods.LogContainers {
+	if util.CcaUseBareConfigs() || containersorpods.Get() == containersorpods.LogContainers {
 		stopper := startstop.NewParallelStopper()
 		l.lock.Lock()
 		var containerIDs []string
@@ -126,9 +126,12 @@ func (l *Launcher) Stop() {
 // run starts and stops new tailers when it receives a new source
 // or a new service which is mapped to a container.
 func (l *Launcher) run(sourceProvider launchers.SourceProvider, pipelineProvider pipeline.Provider, registry auditor.Registry) {
-	// if we're not logging containers, then there's nothing to do
-	if containersorpods.Wait(l.ctx) != containersorpods.LogContainers {
-		return
+	// when using bare configs, this launcher starts unconditionally
+	if !util.CcaUseBareConfigs() {
+		// if we're not logging containers, then there's nothing to do
+		if containersorpods.Wait(l.ctx) != containersorpods.LogContainers {
+			return
+		}
 	}
 
 	log.Info("Starting Docker launcher")
