@@ -278,6 +278,10 @@ func (p *EnvsEntry) Keys() ([]string, bool) {
 	var i int
 	for _, value := range values {
 		kv := strings.SplitN(value, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+
 		p.keys[i] = kv[0]
 		i++
 	}
@@ -299,8 +303,6 @@ func (p *EnvsEntry) toMap() {
 
 		if len(kv) == 2 {
 			p.kv[k] = kv[1]
-		} else {
-			p.kv[k] = ""
 		}
 	}
 }
