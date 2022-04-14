@@ -306,7 +306,12 @@ func (o *OTLPReceiver) ReceiveResourceSpans(rspans pdata.ResourceSpans, header h
 			tagContainersTags: ctags,
 		}
 	}
-	o.out <- &p
+	select {
+	case o.out <- &p:
+		// 👍
+	default:
+		log.Warn("Payload in channel full. Dropped 1 payload.")
+	}
 	return OTLPIngestSummary{
 		Hostname: hostname,
 		Tags:     attributes.RunningTagsFromAttributes(attr),
